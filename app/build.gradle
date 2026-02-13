@@ -24,6 +24,9 @@ android {
         }
     }
     namespace 'lk.arutha.dictionary'
+    buildFeatures {
+        buildConfig = true
+    }
 }
 
 dependencies {
