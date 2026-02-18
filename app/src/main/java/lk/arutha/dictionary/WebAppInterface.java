@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
+import android.view.View;
 import android.webkit.JavascriptInterface;
 import android.util.Log;
 
@@ -149,23 +150,35 @@ public class WebAppInterface {
     }
 
     @JavascriptInterface
-    public void setStatusBarColor(String hexColor, boolean isDarkBackground) {
-        // We must run UI updates on the main thread
+    public void setStatusBarColor(final String colorHex) {
         if (mContext instanceof Activity) {
-            ((Activity) mContext).runOnUiThread(() -> {
-                Activity activity = (Activity) mContext;
+            ((Activity) mContext).runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        Activity activity = (Activity) mContext;
+                        int color = android.graphics.Color.parseColor(colorHex);
+                        activity.findViewById(R.id.main).setBackgroundColor(color);
 
-                // Change the Background Color
-                activity.getWindow().setStatusBarColor(android.graphics.Color.parseColor(hexColor));
+                        double luminance = (0.299 * android.graphics.Color.red(color) +
+                                0.587 * android.graphics.Color.green(color) +
+                                0.114 * android.graphics.Color.blue(color)) / 255;
 
-                // Change the Icon Color (White text for dark background, Black text for light)
-                android.view.View decorView = activity.getWindow().getDecorView();
-                if (isDarkBackground) {
-                    // Clear the flag -> White Icons
-                    decorView.setSystemUiVisibility(0);
-                } else {
-                    // Set the flag -> Black Icons
-                    decorView.setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
+                        View decorView = activity.getWindow().getDecorView();
+                        int flags = decorView.getSystemUiVisibility();
+
+                        if (luminance > 0.5) {
+                            // Light background -> Dark icons
+                            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                        } else {
+                            // Dark background -> Light icons
+                            flags &= ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR;
+                        }
+                        decorView.setSystemUiVisibility(flags);
+
+                    } catch (Exception e) {
+                        Log.e("LOG_TAG", "Failed to set status bar color: " + e.getMessage());
+                    }
                 }
             });
         }

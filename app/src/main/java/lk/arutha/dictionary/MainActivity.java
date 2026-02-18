@@ -1,7 +1,8 @@
 package lk.arutha.dictionary;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.activity.OnBackPressedCallback;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.os.Bundle;
@@ -11,7 +12,7 @@ import android.webkit.WebSettings;
 import android.webkit.WebView;
 import android.widget.LinearLayout;
 
-public class MainActivity extends Activity {
+public class MainActivity extends AppCompatActivity {
 
     // UI Components
     private WebView myWebView;
@@ -26,13 +27,6 @@ public class MainActivity extends Activity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        // 1. Set Status Bar Color to Tailwind Yellow-600
-        getWindow().setStatusBarColor(android.graphics.Color.parseColor("#ca8a04"));
-
-        // 2. Set Status Bar Icons to BLACK (because yellow is bright)
-        // If you remove this line, icons will be white (hard to read on yellow)
-        getWindow().getDecorView().setSystemUiVisibility(android.view.View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR);
-
         // 1. Initialize Views
         myWebView = findViewById(R.id.webview);
         loadingLayout = findViewById(R.id.loading_layout);
@@ -42,6 +36,19 @@ public class MainActivity extends Activity {
 
         // 3. Logic: Check App Version vs Last Run Version
         checkVersionAndLoad();
+
+        // 4. Handle Back Button
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (myWebView.canGoBack()) {
+                    myWebView.goBack();
+                } else {
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
     }
 
     @SuppressLint("SetJavaScriptEnabled")
@@ -115,16 +122,9 @@ public class MainActivity extends Activity {
 
         // Load the index.html
         if (myWebView.getUrl() == null) {
-            myWebView.loadUrl("file:///android_asset/index.html");
+            myWebView.loadUrl("file:///android_asset/dist/index.html");
         }
     }
 
-    @Override
-    public void onBackPressed() {
-        if (myWebView.canGoBack()) {
-            myWebView.goBack();
-        } else {
-            super.onBackPressed();
-        }
-    }
+
 }
